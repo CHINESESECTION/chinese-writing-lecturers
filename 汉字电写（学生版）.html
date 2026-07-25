@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="zh-CN" translate="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="google" content="notranslate">
+  <title>Chinese Writing - Student Portal</title>
+  <script>try{if(localStorage.getItem('writeApp_Theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
+  <style>
+    :root { --bg-color: #0F172A; --card-bg: #FFFFFF; --primary: #1E3A8A; --primary-text: #1E3A8A; --surface: #F8FAFC; --text-main: #0F172A; --text-muted: #64748B; --border-color: #E2E8F0; --tray-bg: #F8FAFC; --canvas-bg: #FFFFFF; --teacher-red: #DC2626; --success: #059669; }
+    [data-theme="dark"] { --bg-color: #020617; --card-bg: #0F172A; --primary: #3B82F6; --primary-text: #93C5FD; --surface: #1E293B; --text-main: #E2E8F0; --text-muted: #94A3B8; --border-color: #334155; --tray-bg: #1E293B; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; height: 100vh; height: 100dvh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+    .app-container { width: 100%; max-width: 500px; height: 100%; max-height: 100%; background: var(--card-bg); display: flex; flex-direction: column; position: relative; }
+    header { padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex: none; }
+    .user-name { font-weight: bold; font-size: 0.95rem; color: var(--primary-text); }
+    .user-id { font-size: 0.75rem; color: var(--text-muted); }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+
+    .view-section { flex: 1; display: none; flex-direction: column; overflow-y: auto; overflow-x: hidden; padding: 12px 16px; }
+    .view-section.active { display: flex; }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal { background: var(--card-bg); padding: 20px; border-radius: 12px; width: 90%; max-width: 350px; display: flex; flex-direction: column; }
+    .form-group { margin-bottom: 12px; } .form-group label { display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 4px; } .form-group input { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 1rem; background: var(--card-bg); color: var(--text-main); }
+
+    /* Dashboard */
+    .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px;}
+    .week-card { border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .week-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .week-title { font-weight: bold; font-size: 0.95rem; color: var(--primary-text); }
+    .week-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+    .badge { padding: 4px 8px; border-radius: 12px; font-size: 0.65rem; font-weight: bold; align-self: flex-start;}
+    .badge-pending { background: #FEF3C7; color: #B45309; } .badge-submitted { background: #DBEAFE; color: #1D4ED8; } .badge-graded { background: #D1FAE5; color: #047857; }
+    .week-actions { display: flex; gap: 6px; flex-wrap: wrap; border-top: 1px dashed var(--border-color); padding-top: 8px; margin-top: 4px;}
+
+    .pool-card { background: linear-gradient(135deg, #1E3A8A, #3B82F6); color: white; border-radius: 8px; padding: 16px; margin-top: 16px; text-align: center; }
+    .backup-row { display: flex; justify-content: space-between; margin-top: 20px; padding-top: 10px; border-top: 1px solid var(--border-color); }
+    .storage-note { font-size: 0.7rem; color: var(--text-muted); text-align: center; margin-top: 10px; }
+
+    /* Dictionary List inside Modal */
+    .dict-search-input { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 12px; font-size: 0.95rem; background: var(--card-bg); color: var(--text-main); }
+    .dict-folder-btn { width: 100%; text-align: left; background: var(--surface); border: 1px solid var(--border-color); padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; font-weight: bold; color: var(--primary-text); cursor: pointer; transition: 0.1s;}
+    .dict-folder-btn:hover { background: #EFF6FF; border-color: #BFDBFE;}
+    .dict-word-btn { width: 100%; text-align: left; font-size: 1.3rem; font-family: "Kaiti SC", serif; padding: 12px 16px; color: var(--primary-text); border: 1px solid #CBD5E1; border-radius: 6px; background: white; cursor: pointer; transition: 0.1s; margin-bottom: 6px;}
+    .dict-word-btn:hover { background: #EFF6FF; border-color: var(--primary); }
+
+    /* Practice UI */
+    .prompt-header { display: flex; justify-content: center; align-items: center; gap: 12px; margin-bottom: 8px; flex: none; position: relative;}
+    .pinyin-box { text-align: center; } .pinyin-text { font-size: 1.3rem; font-weight: bold; color: var(--primary-text); line-height: 1.1; } .meaning-text { font-size: 0.85rem; color: var(--text-muted); }
+    .audio-btn { background: #E2E8F0; border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; cursor: pointer; flex: none; color: #0F172A;}
+    .teacher-feedback-box { background: #FEF2F2; border: 1px solid #FCA5A5; border-radius: 8px; padding: 8px; margin-bottom: 8px; display: none; flex: none; }
+    .feedback-grade { font-size: 1rem; font-weight: bold; color: var(--teacher-red); }
+
+    #referenceArea { display: none; flex-direction: column; padding: 8px 12px; background: var(--surface); border: 1px solid #CBD5E1; border-radius: 8px; margin-bottom: 8px; flex: none; }
+    .ref-header { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 4px;}
+    .ref-title { font-size: 0.75rem; color: var(--text-muted); font-weight: bold; text-transform: uppercase; }
+    .ref-controls { display: flex; gap: 8px; align-items: center; }
+    .ref-answer { font-size: 1.5rem; font-weight: bold; color: var(--primary-text); font-family: "Kaiti SC", "KaiTi", serif; text-align: center; display: none;}
+
+    /* Ultra Compact Tray (9 boxes line) */
+    .tray-container { display: flex; justify-content: center; flex-wrap: wrap; gap: 2px; background: var(--tray-bg); padding: 6px; border-radius: 8px; margin-bottom: 8px; min-height: 44px; align-items: center; border: 1px solid var(--border-color); flex: none; }
+    .tray-slot { width: 30px; height: 30px; background: white; border: 1px dashed #94A3B8; border-radius: 4px; display: flex; align-items: center; justify-content: center; position: relative; }
+    .tray-slot.active { border-color: var(--primary); border-style: solid; box-shadow: 0 0 0 2px rgba(30,58,138,0.1); }
+    .tray-slot canvas { width: 100%; height: 100%; position: absolute; top:0; left:0; pointer-events: none;}
+    .tray-punct { font-size: 1.1rem; font-weight: bold; color: var(--text-main); margin: 0 1px; }
+
+    #canvasSection { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; }
+    .canvas-wrapper { width: 100%; max-width: 250px; aspect-ratio: 1 / 1; max-height: 100%; background: var(--canvas-bg); border: 2px solid var(--border-color); border-radius: 8px; margin-bottom: 8px; position: relative; touch-action: none; }
+    canvas { width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+
+    .controls-row { display: flex; gap: 8px; width: 100%; max-width: 250px; margin-bottom: 8px; flex: none; }
+    .controls-row .btn { padding: 8px; font-size: 0.85rem; flex: 1; }
+    .nav-bar { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 8px; margin-top: auto; flex: none; }
+
+    .pool-answer-display { font-size: 2.5rem; font-family: "Kaiti SC", serif; color: var(--primary-text); min-height: 60px; display: flex; align-items: center; justify-content: center; margin-bottom: 2px; flex: none;}
+    .pool-sub-text { text-align: center; font-size: 0.9rem; color: var(--text-muted); min-height: 1.3em; margin-bottom: 6px; flex: none; }
+    .grade-row { display: flex; gap: 8px; width: 100%; margin-top: 8px; flex: none; }
+    .btn { background: var(--primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; display: inline-flex; justify-content: center; align-items: center; transition: 0.1s; }
+    .btn-secondary { background: #64748B; } .btn-success { background: var(--success); } .btn-danger { background: #DC2626; }
+    .btn-outline { background: transparent; border: 1px solid #CBD5E1; color: var(--text-main); }
+
+    /* --- Dark theme overrides (light theme unchanged) --- */
+    [data-theme="dark"] header { background: var(--surface); }
+    [data-theme="dark"] .modal input, [data-theme="dark"] .form-group input { background: #1E293B; color: #E2E8F0; border-color: #475569; }
+    [data-theme="dark"] .dict-search-input { background: #1E293B; color: #E2E8F0; border-color: #475569; }
+    [data-theme="dark"] .dict-folder-btn { background: #1E293B; border-color: #475569; }
+    [data-theme="dark"] .dict-folder-btn:hover { background: #24334D; border-color: #3B82F6; }
+    [data-theme="dark"] .dict-word-btn { background: #1E293B; border-color: #475569; }
+    [data-theme="dark"] .dict-word-btn:hover { background: #24334D; border-color: #3B82F6; }
+    [data-theme="dark"] .audio-btn { background: #334155; color: #E2E8F0; }
+    [data-theme="dark"] #referenceArea { background: #1E293B; border-color: #475569; }
+    [data-theme="dark"] .btn-outline { border-color: #475569; color: #E2E8F0; }
+    [data-theme="dark"] .teacher-feedback-box { background: #450A0A; border-color: #7F1D1D; }
+    [data-theme="dark"] .teacher-feedback-box .fb-comment-dark { color: #FECACA !important; }
+    [data-theme="dark"] .tray-slot { background: #FFFFFF; }
+  </style>
+</head>
+<body>
+
+  <!-- Identity Setup Modal -->
+  <div class="modal-overlay" id="identityModal" style="display: none;">
+    <div class="modal">
+      <h3 id="identityModalTitle" style="margin-top:0; color: var(--primary-text);">Identity Setup</h3>
+      <div class="form-group"><label>Full Name</label><input type="text" id="inputName"></div>
+      <div class="form-group"><label>Index Number</label><input type="text" id="inputId"></div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn" style="flex:1; padding: 12px; font-size:1rem;" onclick="saveIdentity()">Save to Device</button>
+        <button class="btn btn-outline" id="identityCancelBtn" style="display:none; padding: 12px;" onclick="closeIdentityModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dictionary List Modal (Drill-Down & Search) -->
+  <div class="modal-overlay" id="dictModal" style="display: none;">
+    <div class="modal" style="max-height: 85vh; width: 95%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+           <button id="dictBackBtn" class="btn btn-secondary" style="display:none; padding:4px 8px; font-size:0.85rem;" onclick="showDictMain()">⬅ Back</button>
+           <h3 id="dictTitle" style="margin:0; color: var(--primary-text);">📖 Characters Learned</h3>
+        </div>
+        <button class="btn btn-outline" style="padding:4px 8px;" onclick="document.getElementById('dictModal').style.display='none'">❌</button>
+      </div>
+
+      <input type="text" id="dictSearch" class="dict-search-input" placeholder="🔍 Search characters or words..." oninput="handleDictSearch()">
+      <div id="dictListContent" style="overflow-y: auto; flex: 1; padding-right: 4px;"></div>
+    </div>
+  </div>
+
+  <div class="app-container">
+    <header>
+      <div><div class="user-name" id="uiName">--</div><div class="user-id" id="uiId">ID: --</div></div>
+      <div class="header-actions">
+        <button class="btn btn-outline" id="themeToggleBtn" style="padding: 6px 10px; font-size: 0.85rem;" title="Toggle dark mode" onclick="toggleTheme()">🌙</button>
+        <button class="btn btn-outline" id="muteToggleBtn" style="padding: 6px 10px; font-size: 0.85rem;" onclick="toggleMute()">🔇 Unmute Audio</button>
+        <button class="btn btn-outline" style="padding: 6px 10px; font-size: 0.85rem;" title="Edit profile" onclick="openIdentityEditor()">✏️</button>
+        <button class="btn btn-secondary" style="padding: 6px 10px; font-size: 0.85rem;" onclick="showView('dashboardView')">🏠 Home</button>
+      </div>
+    </header>
+
+    <!-- 1. DASHBOARD -->
+    <div id="dashboardView" class="view-section active">
+      <div class="dashboard-header">
+        <h3 style="margin:0;">My Semester</h3>
+        <button class="btn btn-success" style="padding: 6px 10px; font-size: 0.8rem;" onclick="document.getElementById('fileInput').click()">➕ Add Assignment</button>
+        <input type="file" id="fileInput" accept=".dat" style="display:none;" onchange="importWeeklyDat(event)">
+      </div>
+      <div id="weekListContainer"></div>
+      <div id="emptyDashboardMsg" style="text-align: center; color: var(--text-muted); padding: 40px 20px;">No assignments loaded. Click "Add Assignment" to begin.</div>
+
+      <!-- Renamed from Pool to Characters Learned -->
+      <div class="pool-card" id="poolCard" style="display: none;">
+        <h4 style="margin:0 0 4px 0;">🔠 Characters Learned</h4>
+        <p style="margin:0 0 12px 0; font-size:0.85rem;">Total accumulated: <strong id="poolCount">0</strong></p>
+        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+           <button class="btn" style="background: white; color: #1E3A8A; padding: 8px 16px; font-size:0.9rem;" onclick="showDictMain()">📖 View List</button>
+           <button class="btn btn-success" style="padding: 8px 16px; font-size:0.9rem;" onclick="startPoolPractice()">Practice Random</button>
+           <button class="btn" style="background: white; color: #B45309; padding: 8px 16px; font-size:0.9rem;" onclick="startMistakePractice()">📕 Mistakes (<span id="mistakeCount">0</span>)</button>
+        </div>
+      </div>
+
+      <div class="backup-row">
+        <button class="btn btn-outline" style="font-size: 0.75rem; padding: 4px 8px;" onclick="exportBackup()">💾 Backup My Data</button>
+        <button class="btn btn-outline" style="font-size: 0.75rem; padding: 4px 8px;" onclick="triggerRestore()">🔄 Restore Data</button>
+        <input type="file" id="restoreInput" accept=".json" style="display:none;" onchange="handleRestore(event)">
+      </div>
+      <div class="storage-note" id="storageNote"></div>
+      <input type="file" id="feedbackInput" accept=".json" style="display:none;" onchange="handleFeedbackImport(event)">
+    </div>
+
+    <!-- 2. PRACTICE / REVISE / FEEDBACK VIEW -->
+    <div id="practiceView" class="view-section">
+      <div class="prompt-header">
+        <div class="pinyin-box"><div class="pinyin-text" id="promptPinyin">--</div><div class="meaning-text" id="promptMeaning">--</div></div>
+        <button class="audio-btn" id="practiceAudioBtn" onclick="playAudio(activeWeekLayout.items[currentItemIndex].answer)">🔊</button>
+      </div>
+
+      <div class="teacher-feedback-box" id="teacherFeedbackBox">
+        <div class="feedback-grade" id="fbGrade">Grade: --/100</div>
+        <div style="font-size: 0.85rem; color: #991B1B; margin-top:2px;" id="fbComment">No comment.</div>
+      </div>
+
+      <div id="referenceArea">
+        <div class="ref-header">
+          <span class="ref-title">Reference Answer</span>
+          <div class="ref-controls">
+             <button class="audio-btn" style="width:30px; height:30px; font-size:0.9rem;" onclick="playAudio(activeWeekLayout.items[currentItemIndex].answer)">🔊</button>
+             <button class="btn btn-outline" style="padding:4px 8px;" id="toggleRefBtn" onclick="toggleReference()">🙈</button>
+          </div>
+        </div>
+        <div class="ref-answer" id="refAnswerText"></div>
+      </div>
+
+      <div class="tray-container" id="trayContainer"></div>
+
+      <div id="canvasSection">
+        <div id="feedbackMagnifierMsg" style="display:none; font-size:0.8rem; font-weight:bold; color:var(--primary-text); margin-bottom:6px;">🔍 Zoomed Feedback View</div>
+        <div class="canvas-wrapper"><canvas id="mainCanvas"></canvas></div>
+
+        <div class="controls-row" id="practiceControls">
+           <button class="btn btn-secondary" onclick="undoStroke()">Undo</button>
+           <button class="btn btn-danger" onclick="clearCanvas()">Clear</button>
+        </div>
+        <button class="btn btn-success" id="mainActionBtn" style="width: 100%; max-width: 250px; padding: 10px; font-size: 0.95rem; margin-bottom: 4px;" onclick="handleMainAction()">➕ Add to Tray</button>
+      </div>
+
+      <button class="btn" id="exportBtn" style="width:100%; background: #0F172A; padding: 12px; margin-top: auto; display:none;" onclick="exportSubmission()">💾 Hand In Assignment</button>
+
+      <div class="nav-bar">
+        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" id="prevBtn" onclick="navigateItem(-1)">⏮ Prev</button>
+        <strong id="progressText" style="font-size: 0.9rem;">1 / 5</strong>
+        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" id="nextBtn" onclick="navigateItem(1)">Next ⏭</button>
+      </div>
+    </div>
+
+    <!-- 3. POOL PRACTICE -->
+    <div id="poolPracticeView" class="view-section">
+      <h3 id="poolPracticeTitle" style="margin:0 0 8px 0; text-align:center; color: var(--primary-text);">Characters Learned</h3>
+      <div style="text-align:center; margin-bottom: 8px;"><button class="audio-btn" style="margin: 0 auto; width:45px; height:45px; font-size:1.3rem;" onclick="playPoolAudio()">🔊</button></div>
+      <div class="pool-answer-display" id="poolAnswerText">？</div>
+      <div class="pool-sub-text" id="poolSubText"></div>
+      <div id="poolCanvasSection" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:0;">
+        <div class="canvas-wrapper" style="max-width: 300px; aspect-ratio: 4/3;"><canvas id="poolCanvas"></canvas></div>
+        <div class="controls-row" style="max-width: 300px;"><button class="btn btn-secondary" onclick="undoPoolStroke()">Undo</button><button class="btn btn-danger" onclick="clearPoolCanvas()">Clear</button></div>
+      </div>
+      <div class="grade-row" id="poolGradeRow" style="display:none;">
+        <button class="btn btn-success" style="flex:1; padding:10px;" onclick="gradePoolWord(true)">✔ Got it</button>
+        <button class="btn btn-danger" style="flex:1; padding:10px;" onclick="gradePoolWord(false)">✘ Missed</button>
+      </div>
+      <div style="display: flex; gap: 8px; width: 100%; margin-top:auto;">
+        <button class="btn btn-outline" id="poolPrevBtn" style="flex:0.6; padding:10px; opacity:0.4;" onclick="prevPoolCharacter()">← Prev</button>
+        <button class="btn btn-outline" id="poolToggleBtn" style="flex:1; padding:10px;" onclick="togglePoolAnswer()">👀 Reveal</button>
+        <button class="btn btn-success" id="poolNextBtn" style="flex:1; padding:10px;" onclick="nextPoolCharacter()">⏭ Random Word</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const LOGICAL_SIZE = 500; const ID_KEY = "writeApp_Identity"; const ROSTER_KEY = "writeApp_SemesterRoster"; const POOL_KEY = "writeApp_WordPool_v3";
+  const STATS_KEY = "writeApp_PoolStats"; const MISTAKE_KEY = "writeApp_Mistakes"; const THEME_KEY = "writeApp_Theme";
+  let studentIdentity = { id: "", name: "" }; let semesterRoster = []; let globalPool = [];
+  let poolStats = {}; let mistakeSet = new Set();
+  let isMuted = true; // DEFAULT MUTED
+  let audioUnlocked = false;
+  let currentAppMode = 'practice'; let activeWeekId = null; let activeWeekLayout = null; let activeSessionData = null;
+  let currentItemIndex = 0; let activeSlotIndex = 0; let currentStrokes = []; let poolStrokes = []; let isDrawing = false; let isRefHidden = true;
+
+  const canvas = document.getElementById('mainCanvas'); const ctx = canvas.getContext('2d');
+  const poolCanvas = document.getElementById('poolCanvas'); const poolCtx = poolCanvas.getContext('2d');
+
+  function unlockAudio() { if (!audioUnlocked && 'speechSynthesis' in window) { window.speechSynthesis.speak(new SpeechSynthesisUtterance('')); audioUnlocked = true; } document.body.removeEventListener('touchstart', unlockAudio); document.body.removeEventListener('click', unlockAudio); }
+  document.body.addEventListener('touchstart', unlockAudio, {once: true}); document.body.addEventListener('click', unlockAudio, {once: true});
+  if ('speechSynthesis' in window) window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+
+  window.onload = () => {
+    initCanvases(); checkIdentity(); showView('dashboardView');
+    document.getElementById('themeToggleBtn').innerText = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
+  };
+
+  function showView(viewId) { document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active')); document.getElementById(viewId).classList.add('active'); if (viewId === 'dashboardView') loadDashboard(); }
+
+  // --- DARK MODE ---
+  function toggleTheme() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (isDark) { document.documentElement.removeAttribute('data-theme'); localStorage.setItem(THEME_KEY, 'light'); }
+    else { document.documentElement.setAttribute('data-theme', 'dark'); localStorage.setItem(THEME_KEY, 'dark'); }
+    document.getElementById('themeToggleBtn').innerText = isDark ? '🌙' : '☀️';
+  }
+
+  function initCanvases() {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = LOGICAL_SIZE * dpr; canvas.height = LOGICAL_SIZE * dpr; ctx.scale(dpr, dpr);
+    poolCanvas.width = LOGICAL_SIZE * dpr; poolCanvas.height = (LOGICAL_SIZE * 0.75) * dpr; poolCtx.scale(dpr, dpr);
+    setupCanvasDrawing(canvas, ctx, () => currentStrokes, redrawMainCanvas, LOGICAL_SIZE, LOGICAL_SIZE);
+    setupCanvasDrawing(poolCanvas, poolCtx, () => poolStrokes, redrawPoolCanvas, LOGICAL_SIZE, LOGICAL_SIZE * 0.75);
+  }
+
+  function toggleMute() { isMuted = !isMuted; document.getElementById('muteToggleBtn').innerText = isMuted ? "🔇 Unmute Audio" : "🔊 Mute Audio"; }
+  function playAudio(text) {
+    if (isMuted) return;
+    // Try pre-generated Azure MP3 embedded in the current practice item
+    try {
+      if (activeWeekLayout && activeWeekLayout.items && activeWeekLayout.items[currentItemIndex]) {
+        const item = activeWeekLayout.items[currentItemIndex];
+        if (item.audio) { const a = new Audio(item.audio); a.play().catch(() => {}); return; }
+      }
+    } catch(e) {}
+    // Fallback: device-local TTS
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text); utterance.lang = 'zh-CN'; utterance.rate = 0.8;
+    const voices = window.speechSynthesis.getVoices(); const zhVoice = voices.find(v => v.lang.includes('zh') || v.lang.includes('cmn'));
+    if (zhVoice) utterance.voice = zhVoice; window.speechSynthesis.speak(utterance);
+  }
+  function toggleReference() { isRefHidden = !isRefHidden; document.getElementById('toggleRefBtn').innerText = isRefHidden ? "🙈" : "👁️"; document.getElementById('refAnswerText').style.display = isRefHidden ? "none" : "block"; }
+
+  function checkIdentity() {
+    const saved = localStorage.getItem(ID_KEY);
+    if (saved) { studentIdentity = JSON.parse(saved); document.getElementById('uiName').innerText = studentIdentity.name; document.getElementById('uiId').innerText = `ID: ${studentIdentity.id}`; }
+    else { document.getElementById('identityModalTitle').innerText = 'Identity Setup'; document.getElementById('identityCancelBtn').style.display = 'none'; document.getElementById('identityModal').style.display = 'flex'; }
+  }
+  function openIdentityEditor() {
+    document.getElementById('inputName').value = studentIdentity.name || '';
+    document.getElementById('inputId').value = studentIdentity.id || '';
+    document.getElementById('identityModalTitle').innerText = 'Edit Profile';
+    document.getElementById('identityCancelBtn').style.display = 'inline-flex';
+    document.getElementById('identityModal').style.display = 'flex';
+  }
+  function closeIdentityModal() { document.getElementById('identityModal').style.display = 'none'; }
+  function saveIdentity() { const name = document.getElementById('inputName').value.trim(); const id = document.getElementById('inputId').value.trim(); if (!name || !id) return alert("Required!"); studentIdentity = { id, name }; localStorage.setItem(ID_KEY, JSON.stringify(studentIdentity)); document.getElementById('identityModal').style.display = 'none'; checkIdentity(); }
+
+  // --- POOL HELPERS (normalize old string entries & new object entries) ---
+  function poolWordOf(item) { return typeof item === 'string' ? item : item.word; }
+  function findPoolItem(word) { return globalPool.find(w => poolWordOf(w) === word) || null; }
+
+  function updateStorageNote() {
+    let bytes = 0;
+    for (let i = 0; i < localStorage.length; i++) { const key = localStorage.key(i); if (key.startsWith('writeApp_')) bytes += (localStorage.getItem(key) || '').length + key.length; }
+    document.getElementById('storageNote').innerText = `Device storage: ${(bytes / 1024).toFixed(1)} KB · ${semesterRoster.length} assignment(s) · ${globalPool.length} word(s) · v2.0`;
+  }
+
+  function loadDashboard() {
+    if (localStorage.getItem(ROSTER_KEY)) semesterRoster = JSON.parse(localStorage.getItem(ROSTER_KEY));
+    if (localStorage.getItem(POOL_KEY)) globalPool = JSON.parse(localStorage.getItem(POOL_KEY));
+    poolStats = JSON.parse(localStorage.getItem(STATS_KEY) || '{}');
+    mistakeSet = new Set(JSON.parse(localStorage.getItem(MISTAKE_KEY) || '[]'));
+
+    const container = document.getElementById('weekListContainer'); container.innerHTML = '';
+    if (globalPool.length > 0) { document.getElementById('poolCard').style.display = 'block'; document.getElementById('poolCount').innerText = globalPool.length; }
+    document.getElementById('mistakeCount').innerText = mistakeSet.size;
+    if (semesterRoster.length === 0) { document.getElementById('emptyDashboardMsg').style.display = 'block'; updateStorageNote(); return; }
+    document.getElementById('emptyDashboardMsg').style.display = 'none';
+
+    semesterRoster.forEach((weekId, index) => {
+      const layoutStr = localStorage.getItem(`writeApp_Layout_${weekId}`); const sessionStr = localStorage.getItem(`writeApp_Session_${weekId}`);
+      if(!layoutStr || !sessionStr) return;
+      const layout = JSON.parse(layoutStr); const session = JSON.parse(sessionStr);
+      const dateStr = layout.createdAt ? new Date(layout.createdAt).toLocaleDateString() : 'Unknown Date';
+
+      let statusClass = "badge-pending"; let statusText = "Pending";
+      if (session.meta.isGraded) { statusClass = "badge-graded"; statusText = "Graded"; } else if (session.meta.isRevisionMode) { statusClass = "badge-submitted"; statusText = "Submitted"; }
+
+      // Progress: filled char slots vs total char slots
+      let totalChars = 0, filledChars = 0;
+      layout.items.forEach(it => {
+        const sess = session.responses[it.id] || { slots: [] };
+        it.layout.forEach((t, i) => { if (t === 'char') { totalChars++; if (sess.slots[i] && sess.slots[i].length > 0) filledChars++; } });
+      });
+      let gradeInfo = '';
+      if (session.meta.isGraded) {
+        const grades = [];
+        layout.items.forEach(it => { const f = (session.responses[it.id] || {}).feedback; if (f && f.grade !== undefined && f.grade !== null && f.grade !== '') { const n = parseFloat(f.grade); if (!isNaN(n)) grades.push(n); } });
+        if (grades.length > 0) gradeInfo = ` · ⭐ ${Math.round(grades.reduce((a, b) => a + b, 0) / grades.length)}/100`;
+      }
+
+      const card = document.createElement('div'); card.className = 'week-card';
+      let actionBtns = '';
+      if (session.meta.isGraded) {
+        actionBtns = `<button class="btn btn-secondary" style="font-size:0.75rem; padding:6px; flex:1;" onclick="openWeek('${weekId}', 'feedback')">👀 Review Feedback</button> <button class="btn btn-outline" style="font-size:0.75rem; padding:6px; flex:1;" onclick="openWeek('${weekId}', 'revise')">✍️ Revise</button>`;
+      } else if (session.meta.isRevisionMode) {
+        actionBtns = `<button class="btn btn-secondary" style="font-size:0.75rem; padding:6px; flex:1;" onclick="openWeek('${weekId}', 'revise')">✍️ Revise</button> <button class="btn btn-success" style="font-size:0.75rem; padding:6px; flex:1;" onclick="triggerFeedbackImport('${weekId}')">📥 Load Feedback</button>`;
+      } else {
+        actionBtns = `<button class="btn" style="font-size:0.75rem; padding:6px; flex:1;" onclick="openWeek('${weekId}', 'practice')">✍️ Continue Assignment</button>`;
+      }
+      actionBtns += ` <button class="btn btn-outline" style="font-size:0.75rem; padding:6px 8px;" title="Export PNG sheet" onclick="exportWeekSheet('${weekId}')">🖼</button> <button class="btn btn-danger" style="font-size:0.75rem; padding:6px 8px;" title="Delete assignment" onclick="deleteWeek('${weekId}')">🗑</button>`;
+      card.innerHTML = `<div class="week-header"><div><div class="week-title">Assignment ${index + 1}: ${layout.weekTitle}</div><div class="week-meta">Added on: ${dateStr} · ${filledChars}/${totalChars} written${gradeInfo}</div></div><div class="badge ${statusClass}">${statusText}</div></div><div class="week-actions">${actionBtns}</div>`;
+      container.appendChild(card);
+    });
+    updateStorageNote();
+  }
+
+  function deleteWeek(weekId) {
+    const layout = JSON.parse(localStorage.getItem(`writeApp_Layout_${weekId}`) || '{}');
+    if (!confirm(`Delete "${layout.weekTitle || weekId}"?\n\nYour writing, feedback, and this assignment's words in Characters Learned will be removed from this device.`)) return;
+    localStorage.removeItem(`writeApp_Layout_${weekId}`);
+    localStorage.removeItem(`writeApp_Session_${weekId}`);
+    semesterRoster = semesterRoster.filter(id => id !== weekId);
+    localStorage.setItem(ROSTER_KEY, JSON.stringify(semesterRoster));
+    globalPool = globalPool.filter(w => (typeof w === 'string' ? 'other' : w.weekId) !== weekId);
+    localStorage.setItem(POOL_KEY, JSON.stringify(globalPool));
+    const remaining = new Set(globalPool.map(poolWordOf));
+    mistakeSet = new Set([...mistakeSet].filter(w => remaining.has(w)));
+    localStorage.setItem(MISTAKE_KEY, JSON.stringify([...mistakeSet]));
+    loadDashboard();
+  }
+
+  // --- PNG SUBMISSION SHEET (offline, shareable via WhatsApp / printable) ---
+  function exportWeekSheet(weekId) {
+    const layout = JSON.parse(localStorage.getItem(`writeApp_Layout_${weekId}`));
+    const session = JSON.parse(localStorage.getItem(`writeApp_Session_${weekId}`));
+    if (!layout || !session) return alert("Data not found.");
+
+    const W = 1000, PAD = 40, BOX = 84, GAP = 6, maxRowW = W - 2 * PAD;
+    const itemHeight = (it) => { let x = 0, lines = 1; it.layout.forEach(t => { const w = (t === 'char') ? BOX + GAP : 34; if (x + w > maxRowW) { lines++; x = 0; } x += w; }); return 52 + lines * (BOX + GAP); };
+    let H = 150 + 60; layout.items.forEach(it => H += itemHeight(it));
+
+    const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+    g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#1E3A8A'; g.font = 'bold 30px sans-serif'; g.fillText('Chinese Writing — Submission Sheet', PAD, 52);
+    g.fillStyle = '#334155'; g.font = '20px sans-serif';
+    g.fillText(`Name: ${session.meta.studentName || studentIdentity.name}    ID: ${session.meta.studentId || studentIdentity.id}`, PAD, 86);
+    g.fillText(`Assignment: ${layout.weekTitle || weekId}    Date: ${new Date().toLocaleDateString()}`, PAD, 114);
+    g.strokeStyle = '#CBD5E1'; g.lineWidth = 1; g.beginPath(); g.moveTo(PAD, 132); g.lineTo(W - PAD, 132); g.stroke();
+
+    let y = 150;
+    layout.items.forEach((it, idx) => {
+      const sess = session.responses[it.id] || { slots: [] };
+      const fb = sess.feedback;
+      g.fillStyle = '#0F172A'; g.font = 'bold 20px sans-serif'; g.fillText(`${idx + 1}. ${it.pinyin || ''}`, PAD, y + 22);
+      g.fillStyle = '#64748B'; g.font = '16px sans-serif'; g.fillText(it.meaning || '', PAD, y + 44);
+      if (fb && fb.grade !== undefined && fb.grade !== null && fb.grade !== '') { g.fillStyle = '#DC2626'; g.font = 'bold 22px sans-serif'; g.fillText(`${fb.grade}/100`, W - PAD - 90, y + 24); }
+
+      let x = PAD, rowY = y + 52;
+      it.layout.forEach((t, i) => {
+        const w = (t === 'char') ? BOX + GAP : 34;
+        if (x - PAD + w > maxRowW) { x = PAD; rowY += BOX + GAP; }
+        if (t !== 'char') {
+          g.fillStyle = '#0F172A'; g.font = 'bold 36px "Kaiti SC","KaiTi",serif'; g.fillText(t, x + 4, rowY + BOX - 26);
+        } else {
+          g.strokeStyle = '#94A3B8'; g.lineWidth = 1.5; g.strokeRect(x, rowY, BOX, BOX);
+          const sStrokes = (sess.slots && sess.slots[i]) || [];
+          const tStrokes = (fb && fb.teacherStrokesBySlot && fb.teacherStrokesBySlot[i]) || [];
+          drawStrokesZoomed(g, sStrokes, tStrokes, BOX, x, rowY);
+        }
+        x += w;
+      });
+      y += itemHeight(it);
+    });
+    g.fillStyle = '#94A3B8'; g.font = '14px sans-serif'; g.fillText('Generated offline · Chinese Writing App', PAD, H - 24);
+
+    const fname = `${session.meta.studentId || studentIdentity.id}_${weekId}_sheet.png`;
+    if (c.toBlob) { c.toBlob(b => { const url = URL.createObjectURL(b); const a = document.createElement('a'); a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000); }, 'image/png'); }
+    else { const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = fname; document.body.appendChild(a); a.click(); a.remove(); }
+  }
+
+  // --- RESTORED DICTIONARY SYSTEM (Drill-Down & Search) ---
+  let dictGroups = {};
+
+  function masteryTag(word) {
+    const st = poolStats[word]; if (!st || !st.seen) return '';
+    let tag = `✔${st.correct || 0} ✘${st.missed || 0}`;
+    if (mistakeSet.has(word)) tag = '📕 ' + tag;
+    return `<span style="float:right; font-size:0.75rem; color:#94A3B8; font-family:sans-serif;">${tag}</span>`;
+  }
+
+  function showDictMain() {
+    document.getElementById('dictSearch').value = '';
+    document.getElementById('dictBackBtn').style.display = 'none';
+    document.getElementById('dictTitle').innerText = '📖 Characters Learned';
+    document.getElementById('dictModal').style.display = 'flex';
+
+    dictGroups = {};
+    semesterRoster.forEach((wId, idx) => { dictGroups[wId] = { title: `Assignment ${idx + 1}`, words: [] }; });
+
+    globalPool.forEach(item => {
+       // Safe fallback for old local storage formats just in case
+       const w = typeof item === 'string' ? {word: item, weekId: 'other'} : item;
+       if(dictGroups[w.weekId]) dictGroups[w.weekId].words.push(w.word);
+       else { if(!dictGroups['other']) dictGroups['other'] = {title: 'Other', words: []}; dictGroups['other'].words.push(w.word); }
+    });
+
+    const listDiv = document.getElementById('dictListContent'); listDiv.innerHTML = '';
+    Object.keys(dictGroups).forEach(key => {
+       const g = dictGroups[key]; if(g.words.length === 0) return;
+       listDiv.innerHTML += `<button class="dict-folder-btn" onclick="openDictGroup('${key}')">📁 ${g.title} (${g.words.length})</button>`;
+    });
+  }
+
+  function openDictGroup(key) {
+    document.getElementById('dictBackBtn').style.display = 'block';
+    document.getElementById('dictTitle').innerText = dictGroups[key].title;
+    const listDiv = document.getElementById('dictListContent'); listDiv.innerHTML = '';
+
+    const sortedWords = [...dictGroups[key].words].sort((a,b) => a.localeCompare(b, 'zh-CN'));
+    sortedWords.forEach((word, index) => {
+       listDiv.innerHTML += `<button class="dict-word-btn" onclick="startSpecificPoolPractice('${word}')"><span style="font-size:1rem; color:#94A3B8; margin-right:8px;">${index+1}.</span>${word}${masteryTag(word)}</button>`;
+    });
+  }
+
+  function handleDictSearch() {
+    const q = document.getElementById('dictSearch').value.trim().toLowerCase();
+    if (!q) return showDictMain();
+
+    document.getElementById('dictBackBtn').style.display = 'none';
+    document.getElementById('dictTitle').innerText = '🔍 Search Results';
+    const listDiv = document.getElementById('dictListContent'); listDiv.innerHTML = '';
+
+    const matched = globalPool.map(w => typeof w === 'string' ? w : w.word).filter(w => w.includes(q)).sort((a,b) => a.localeCompare(b, 'zh-CN'));
+    if (matched.length === 0) { listDiv.innerHTML = '<div style="color:#64748B; text-align:center; padding: 20px;">No results found.</div>'; return; }
+
+    matched.forEach((w, index) => {
+       listDiv.innerHTML += `<button class="dict-word-btn" onclick="startSpecificPoolPractice('${w}')"><span style="font-size:1rem; color:#94A3B8; margin-right:8px;">${index+1}.</span>${w}${masteryTag(w)}</button>`;
+    });
+  }
+
+  function startSpecificPoolPractice(word) {
+    document.getElementById('dictModal').style.display = 'none';
+    poolDeck = null; document.getElementById('poolPracticeTitle').innerText = 'Characters Learned';
+    document.getElementById('poolNextBtn').innerHTML = '⏭ Random Word';
+    showView('poolPracticeView');
+    currentPoolChar = word; lastPoolWord = word;
+    isPoolRevealed = false;
+    document.getElementById('poolAnswerText').innerText = "？";
+    document.getElementById('poolSubText').innerText = "";
+    document.getElementById('poolToggleBtn').innerHTML = "👀 Reveal";
+    document.getElementById('poolGradeRow').style.display = 'none';
+    clearPoolCanvas(); playPoolAudio();
+  }
+
+  function exportBackup() {
+    if (!studentIdentity.id) return alert("Setup identity first."); const backupData = {};
+    for (let i = 0; i < localStorage.length; i++) { const key = localStorage.key(i); if (key.startsWith('writeApp_')) backupData[key] = localStorage.getItem(key); }
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
+    const dl = document.createElement('a'); dl.href = dataStr; dl.download = `${studentIdentity.id}_device_backup.json`;
+    document.body.appendChild(dl); dl.click(); dl.remove();
+  }
+  function triggerRestore() { document.getElementById('restoreInput').click(); }
+  function handleRestore(event) {
+    const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
+    reader.onload = (e) => {
+      try { const data = JSON.parse(e.target.result); for (const key in data) { if (key.startsWith('writeApp_')) localStorage.setItem(key, data[key]); }
+        alert("Data restored successfully!"); location.reload();
+      } catch(err) { alert("Invalid backup file."); }
+    }; reader.readAsText(file); event.target.value = '';
+  }
+
+  function importWeeklyDat(event) {
+    const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const jsonStr = decodeURIComponent(escape(atob(e.target.result))); const layoutData = JSON.parse(jsonStr);
+        layoutData.createdAt = layoutData.createdAt || new Date().toISOString(); const weekId = layoutData.weekId;
+
+        localStorage.setItem(`writeApp_Layout_${weekId}`, JSON.stringify(layoutData));
+        if (!localStorage.getItem(`writeApp_Session_${weekId}`)) {
+          const newSession = { meta: { studentId: studentIdentity.id, studentName: studentIdentity.name, weekId: weekId, isRevisionMode: false, isGraded: false }, responses: {} };
+          layoutData.items.forEach(item => newSession.responses[item.id] = { slots: [] }); localStorage.setItem(`writeApp_Session_${weekId}`, JSON.stringify(newSession));
+        }
+        if (!semesterRoster.includes(weekId)) { semesterRoster.push(weekId); localStorage.setItem(ROSTER_KEY, JSON.stringify(semesterRoster)); }
+
+        layoutData.items.forEach(item => {
+           // Ignore items without specific target words provided by the teacher
+           const wordsToExtract = (item.words && item.words.length > 0) ? item.words : [];
+           wordsToExtract.forEach(word => {
+             if (!globalPool.some(w => (typeof w === 'string' ? w : w.word) === word)) {
+               // Assign exact word audio using the new `wordAudios` dictionary generated by Lecturer App
+               const wordAudio = (item.wordAudios && item.wordAudios[word]) ? item.wordAudios[word] : null;
+               globalPool.push({
+                   word: word, 
+                   weekId: layoutData.weekId, 
+                   pinyin: item.pinyin || '', 
+                   meaning: item.meaning || '',
+                   audio: wordAudio
+               });
+             } else {
+               // Update existing pool entry with audio if the .dat provides it
+               const existing = globalPool.find(w => (typeof w === 'string' ? w : w.word) === word);
+               if (existing && typeof existing === 'object') {
+                 if (item.wordAudios && item.wordAudios[word] && !existing.audio) {
+                     existing.audio = item.wordAudios[word];
+                 }
+                 existing.pinyin = existing.pinyin || item.pinyin || ''; 
+                 existing.meaning = existing.meaning || item.meaning || '';
+               }
+             }
+           });
+        });
+        localStorage.setItem(POOL_KEY, JSON.stringify(globalPool)); loadDashboard();
+      } catch (err) { alert("Invalid .dat file."); }
+    }; reader.readAsText(file); event.target.value = '';
+  }
+
+  let pendingFeedbackWeekId = null; function triggerFeedbackImport(weekId) { pendingFeedbackWeekId = weekId; document.getElementById('feedbackInput').click(); }
+  function handleFeedbackImport(event) {
+    const file = event.target.files[0]; if (!file) return; const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const gradedJson = JSON.parse(e.target.result);
+        if (gradedJson.meta.weekId !== pendingFeedbackWeekId || gradedJson.meta.studentId !== studentIdentity.id) return alert("File mismatch!");
+        let session = JSON.parse(localStorage.getItem(`writeApp_Session_${pendingFeedbackWeekId}`)); session.meta.isGraded = true;
+        gradedJson.responses.forEach(gradedItem => { if(session.responses[gradedItem.itemId] && gradedItem.feedback) { session.responses[gradedItem.itemId].feedback = gradedItem.feedback; } });
+        localStorage.setItem(`writeApp_Session_${pendingFeedbackWeekId}`, JSON.stringify(session)); alert("Teacher Feedback Loaded!"); loadDashboard();
+      } catch (err) { alert("Invalid feedback file."); }
+    }; reader.readAsText(file); event.target.value = '';
+  }
+
+  function openWeek(weekId, mode) {
+    activeWeekId = weekId; currentAppMode = mode;
+    activeWeekLayout = JSON.parse(localStorage.getItem(`writeApp_Layout_${weekId}`)); activeSessionData = JSON.parse(localStorage.getItem(`writeApp_Session_${weekId}`));
+    showView('practiceView'); currentItemIndex = 0;
+
+    const practiceControls = document.getElementById('practiceControls');
+    const mainActionBtn = document.getElementById('mainActionBtn');
+    const feedbackMagnifierMsg = document.getElementById('feedbackMagnifierMsg');
+
+    if (mode === 'feedback') {
+      document.getElementById('canvasSection').style.display = 'flex';
+      practiceControls.style.display = 'none'; mainActionBtn.style.display = 'none';
+      feedbackMagnifierMsg.style.display = 'block'; document.getElementById('exportBtn').style.display = 'none';
+      document.getElementById('referenceArea').style.display = 'flex'; document.getElementById('practiceAudioBtn').style.display = 'none';
+    } else if (mode === 'revise') {
+      document.getElementById('canvasSection').style.display = 'flex';
+      practiceControls.style.display = 'flex'; mainActionBtn.style.display = 'flex';
+      feedbackMagnifierMsg.style.display = 'none'; document.getElementById('exportBtn').style.display = 'none';
+      document.getElementById('referenceArea').style.display = 'flex'; document.getElementById('practiceAudioBtn').style.display = 'none';
+    } else {
+      document.getElementById('canvasSection').style.display = 'flex';
+      practiceControls.style.display = 'flex'; mainActionBtn.style.display = 'flex';
+      feedbackMagnifierMsg.style.display = 'none'; document.getElementById('referenceArea').style.display = 'none';
+      document.getElementById('practiceAudioBtn').style.display = 'flex';
+    }
+    loadItem();
+  }
+
+  function saveActiveSession() { localStorage.setItem(`writeApp_Session_${activeWeekId}`, JSON.stringify(activeSessionData)); }
+
+  function loadItem() {
+    const item = activeWeekLayout.items[currentItemIndex]; const itemSession = activeSessionData.responses[item.id];
+    document.getElementById('promptPinyin').innerText = item.pinyin; document.getElementById('promptMeaning').innerText = item.meaning;
+    document.getElementById('progressText').innerText = `${currentItemIndex + 1} / ${activeWeekLayout.items.length}`; document.getElementById('refAnswerText').innerText = item.answer;
+    isRefHidden = true; document.getElementById('toggleRefBtn').innerText = "🙈"; document.getElementById('refAnswerText').style.display = "none";
+
+    if (currentAppMode === 'feedback' && itemSession.feedback) {
+      document.getElementById('teacherFeedbackBox').style.display = 'block'; document.getElementById('fbGrade').innerText = `Grade: ${itemSession.feedback.grade || '--'}/100`; document.getElementById('fbComment').innerText = itemSession.feedback.comment || 'No comment.';
+      document.getElementById('fbComment').classList.add('fb-comment-dark');
+    } else { document.getElementById('teacherFeedbackBox').style.display = 'none'; }
+    if (currentAppMode === 'practice' && currentItemIndex === activeWeekLayout.items.length - 1) { document.getElementById('exportBtn').style.display = 'block'; } else { document.getElementById('exportBtn').style.display = 'none'; }
+    document.getElementById('prevBtn').disabled = currentItemIndex === 0; document.getElementById('nextBtn').disabled = currentItemIndex === activeWeekLayout.items.length - 1;
+
+    activeSlotIndex = -1;
+    for (let i = 0; i < item.layout.length; i++) { if (item.layout[i] === 'char' && (!itemSession.slots[i] || itemSession.slots[i].length === 0)) { activeSlotIndex = i; break; } }
+    if (activeSlotIndex === -1) activeSlotIndex = item.layout.indexOf('char');
+    if (activeSlotIndex === -1) activeSlotIndex = 0;
+
+    currentStrokes = []; redrawMainCanvas();
+    renderTray(); updateMainButton(); playAudio(item.answer);
+    if(currentAppMode === 'feedback') loadFeedbackToMainCanvas();
+  }
+
+  function loadFeedbackToMainCanvas() {
+    if (currentAppMode !== 'feedback') return;
+    ctx.clearRect(0, 0, LOGICAL_SIZE, LOGICAL_SIZE);
+    const item = activeWeekLayout.items[currentItemIndex]; const itemSession = activeSessionData.responses[item.id];
+    drawStrokesZoomed(ctx, itemSession.slots[activeSlotIndex] || [], itemSession.feedback?.teacherStrokesBySlot?.[activeSlotIndex] || [], LOGICAL_SIZE);
+  }
+
+  function drawStrokesZoomed(targetCtx, sStrokes, tStrokes, boxSize, originX, originY) {
+    originX = originX || 0; originY = originY || 0;
+    const allStrokes = [];
+    if(sStrokes && sStrokes.length > 0) allStrokes.push(sStrokes);
+    if(tStrokes && tStrokes.length > 0) allStrokes.push(tStrokes);
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity; let hasPts = false;
+    allStrokes.forEach(strokes => { strokes.forEach(stroke => { stroke.forEach(pt => { if(pt.x < minX) minX = pt.x; if(pt.y < minY) minY = pt.y; if(pt.x > maxX) maxX = pt.x; if(pt.y > maxY) maxY = pt.y; hasPts = true; }); }); });
+
+    let scale = boxSize / LOGICAL_SIZE; let offsetX = 0, offsetY = 0;
+    if (hasPts) {
+      const w = maxX - minX; const h = maxY - minY; const maxDim = Math.max(w, h);
+      if(maxDim > 0) { scale = (boxSize * 0.75) / maxDim; offsetX = (boxSize - (w * scale)) / 2 - (minX * scale); offsetY = (boxSize - (h * scale)) / 2 - (minY * scale); }
+    }
+    if(sStrokes && sStrokes.length > 0) drawStrokesTransformed(targetCtx, sStrokes, scale, offsetX + originX, offsetY + originY, "#0F172A");
+    if(tStrokes && tStrokes.length > 0) drawStrokesTransformed(targetCtx, tStrokes, scale, offsetX + originX, offsetY + originY, "#DC2626");
+  }
+
+  function drawStrokesTransformed(context, strokes, scale, offsetX, offsetY, color) {
+    context.strokeStyle = color; context.lineCap = "round"; context.lineJoin = "round";
+    strokes.forEach(stroke => {
+      if (stroke.length < 2) return;
+      for (let i = 1; i < stroke.length; i++) { context.beginPath(); context.lineWidth = Math.max(1, (stroke[i].p || 0.8) * 12 * scale); context.moveTo(stroke[i-1].x * scale + offsetX, stroke[i-1].y * scale + offsetY); context.lineTo(stroke[i].x * scale + offsetX, stroke[i].y * scale + offsetY); context.stroke(); }
+    });
+  }
+
+  function renderTray() {
+    const container = document.getElementById('trayContainer'); container.innerHTML = '';
+    const item = activeWeekLayout.items[currentItemIndex]; const itemSession = activeSessionData.responses[item.id]; let isComplete = true;
+    item.layout.forEach((type, index) => {
+      if (type !== 'char') { const div = document.createElement('div'); div.className = 'tray-punct'; div.innerText = type; container.appendChild(div); }
+      else {
+        const div = document.createElement('div'); div.className = 'tray-slot';
+        if (index === activeSlotIndex) div.classList.add('active');
+        const sCanvas = document.createElement('canvas'); sCanvas.width = 60; sCanvas.height = 60; div.appendChild(sCanvas);
+        if (itemSession.slots[index] && itemSession.slots[index].length > 0) {
+          if (currentAppMode === 'feedback') { drawStrokesZoomed(sCanvas.getContext('2d'), itemSession.slots[index], itemSession.feedback?.teacherStrokesBySlot?.[index], 60); }
+          else { drawStrokes(sCanvas.getContext('2d'), itemSession.slots[index], 60/LOGICAL_SIZE, "#0F172A"); }
+          if(currentAppMode !== 'feedback') div.onclick = () => pullFromTray(index); else div.onclick = () => { activeSlotIndex = index; renderTray(); loadFeedbackToMainCanvas(); }
+        } else { isComplete = false; }
+        container.appendChild(div);
+      }
+    }); return isComplete;
+  }
+
+  function pullFromTray(index) {
+    if(currentAppMode === 'feedback') return;
+    const item = activeWeekLayout.items[currentItemIndex]; const slots = activeSessionData.responses[item.id].slots;
+    currentStrokes = [...slots[index]]; slots[index] = []; activeSlotIndex = index; redrawMainCanvas(); renderTray(); updateMainButton();
+  }
+
+  function handleMainAction() {
+    const item = activeWeekLayout.items[currentItemIndex]; const slots = activeSessionData.responses[item.id].slots; const isComplete = renderTray();
+    if (isComplete && currentStrokes.length === 0) { if (currentItemIndex < activeWeekLayout.items.length - 1) navigateItem(1); return; }
+    if (currentStrokes.length === 0) return;
+    slots[activeSlotIndex] = [...currentStrokes]; saveActiveSession();
+    if (navigator.vibrate) navigator.vibrate(15);
+    activeSlotIndex = -1;
+    for (let i = 0; i < item.layout.length; i++) { if (item.layout[i] === 'char' && (!slots[i] || slots[i].length === 0)) { activeSlotIndex = i; break; } }
+    currentStrokes = []; redrawMainCanvas(); renderTray(); updateMainButton();
+  }
+
+  function updateMainButton() {
+    const btn = document.getElementById('mainActionBtn'); if(currentAppMode === 'feedback') return;
+    const isComplete = renderTray(); if (isComplete && currentStrokes.length === 0) { btn.innerText = "✅ Next Phrase"; btn.className = "btn btn-success"; } else { btn.innerText = "➕ Add to Tray"; btn.className = "btn"; }
+  }
+
+  function navigateItem(dir) { if (currentItemIndex + dir >= 0 && currentItemIndex + dir < activeWeekLayout.items.length) { currentItemIndex += dir; loadItem(); } }
+
+  let currentPoolChar = "";
+  let isPoolRevealed = false;
+  let poolDeck = null;      // null = full pool (weighted); array of words = Mistake Book deck
+  let lastPoolWord = "";
+  let poolHistory = [];     // stack of previously shown words for back-navigation
+
+  function startPoolPractice() {
+    poolDeck = null;
+    poolHistory = [];
+    document.getElementById('poolPracticeTitle').innerText = 'Characters Learned';
+    document.getElementById('poolNextBtn').innerHTML = '⏭ Random Word';
+    showView('poolPracticeView'); nextPoolCharacter();
+  }
+
+  function startMistakePractice() {
+    if (mistakeSet.size === 0) return alert('No mistakes yet. During practice, tap "✘ Missed" on words you get wrong and they will collect here.');
+    poolDeck = [...mistakeSet];
+    poolHistory = [];
+    document.getElementById('poolPracticeTitle').innerText = '📕 Mistake Book';
+    document.getElementById('poolNextBtn').innerHTML = '⏭ Next Mistake';
+    showView('poolPracticeView'); nextPoolCharacter();
+  }
+
+  function pickPoolWord() {
+    const src = poolDeck || globalPool.map(poolWordOf);
+    if (src.length === 0) return null;
+    let candidates = src;
+    // In full-pool mode, 50% chance to prefer mistake words (simple spaced repetition)
+    if (!poolDeck && mistakeSet.size > 0 && Math.random() < 0.5) {
+      const m = src.filter(w => mistakeSet.has(w)); if (m.length > 0) candidates = m;
+    }
+    let w = candidates[Math.floor(Math.random() * candidates.length)];
+    if (candidates.length > 1 && w === lastPoolWord) { w = candidates[Math.floor(Math.random() * candidates.length)]; }
+    return w;
+  }
+
+  function nextPoolCharacter() {
+    const w = pickPoolWord();
+    if (!w) return;
+    // Save current word to history before moving forward
+    if (currentPoolChar) { poolHistory.push(currentPoolChar); if (poolHistory.length > 50) poolHistory.shift(); }
+    restorePoolChar(w);
+    updatePoolNavButtons();
+  }
+
+  function prevPoolCharacter() {
+    if (poolHistory.length === 0) return;
+    const w = poolHistory.pop();
+    if (!w) return;
+    // Don't push current onto history when going back (user can go forward again)
+    restorePoolChar(w);
+    updatePoolNavButtons();
+  }
+
+  function restorePoolChar(w) {
+    currentPoolChar = w; lastPoolWord = w;
+    isPoolRevealed = false;
+    document.getElementById('poolAnswerText').innerText = "？";
+    document.getElementById('poolSubText').innerText = "";
+    document.getElementById('poolToggleBtn').innerHTML = "👀 Reveal";
+    document.getElementById('poolGradeRow').style.display = 'none';
+    clearPoolCanvas();
+    playPoolAudio();
+  }
+
+  function updatePoolNavButtons() {
+    const prevBtn = document.getElementById('poolPrevBtn');
+    if (prevBtn) prevBtn.style.opacity = poolHistory.length > 0 ? '1' : '0.4';
+  }
+
+  function playPoolAudio() {
+    // Check if the current word has its own specific audio
+    const poolItem = findPoolItem(currentPoolChar);
+    if (poolItem && typeof poolItem === 'object' && poolItem.audio) {
+      const a = new Audio(poolItem.audio);
+      a.play().catch(() => {});
+      return;
+    }
+    // Fallback to robotic browser TTS
+    playAudio(currentPoolChar);
+  }
+
+  function togglePoolAnswer() {
+    isPoolRevealed = !isPoolRevealed;
+    if (isPoolRevealed) {
+      document.getElementById('poolAnswerText').innerText = currentPoolChar;
+      const item = findPoolItem(currentPoolChar);
+      let sub = '';
+      if (item && typeof item === 'object') sub = [item.pinyin, item.meaning].filter(Boolean).join(' · ');
+      const st = poolStats[currentPoolChar];
+      if (st && st.seen > 0) sub += `${sub ? ' · ' : ''}✔${st.correct || 0} ✘${st.missed || 0}`;
+      document.getElementById('poolSubText').innerText = sub;
+      document.getElementById('poolToggleBtn').innerHTML = "🙈 Hide";
+      document.getElementById('poolGradeRow').style.display = 'flex';
+    } else {
+      document.getElementById('poolAnswerText').innerText = "？";
+      document.getElementById('poolSubText').innerText = "";
+      document.getElementById('poolToggleBtn').innerHTML = "👀 Reveal";
+      document.getElementById('poolGradeRow').style.display = 'none';
+    }
+  }
+
+  function gradePoolWord(gotIt) {
+    if (!currentPoolChar) return;
+    const st = poolStats[currentPoolChar] || { seen: 0, correct: 0, missed: 0 };
+    st.seen++; st.lastSeen = new Date().toISOString();
+    if (gotIt) { st.correct = (st.correct || 0) + 1; mistakeSet.delete(currentPoolChar); }
+    else { st.missed = (st.missed || 0) + 1; mistakeSet.add(currentPoolChar); }
+    poolStats[currentPoolChar] = st;
+    localStorage.setItem(STATS_KEY, JSON.stringify(poolStats));
+    localStorage.setItem(MISTAKE_KEY, JSON.stringify([...mistakeSet]));
+    document.getElementById('mistakeCount').innerText = mistakeSet.size;
+    if (navigator.vibrate) navigator.vibrate(15);
+    if (poolDeck) {
+      if (gotIt) poolDeck = poolDeck.filter(w => w !== currentPoolChar);
+      if (poolDeck.length === 0) { alert('🎉 Mistake Book cleared! Well done.'); showView('dashboardView'); return; }
+    }
+    nextPoolCharacter();
+  }
+
+  function setupCanvasDrawing(targetCanvas, targetCtx, getStrokesArrayRef, redrawFunc, w, h) {
+    const getPt = (e) => {
+      const rect = targetCanvas.getBoundingClientRect(); const scaleX = w / rect.width; const scaleY = h / rect.height;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      const p = (e.pressure && e.pressure > 0) ? e.pressure : 0.8; return { x: Math.round((clientX - rect.left) * scaleX), y: Math.round((clientY - rect.top) * scaleY), p };
+    };
+    const down = (e) => {
+      if(targetCanvas.id === 'mainCanvas' && currentAppMode === 'feedback') return;
+      if(e.type === 'touchstart') e.preventDefault(); else targetCanvas.setPointerCapture(e.pointerId);
+      isDrawing = true; getStrokesArrayRef().push([getPt(e)]);
+    };
+    const move = (e) => {
+      if (!isDrawing) return; if(e.type === 'touchmove') e.preventDefault();
+      const pt = getPt(e); const arr = getStrokesArrayRef(); const activeStroke = arr[arr.length - 1]; activeStroke.push(pt);
+      if (activeStroke.length >= 2) {
+        const p1 = activeStroke[activeStroke.length - 2], p2 = pt;
+        targetCtx.beginPath(); targetCtx.strokeStyle = "#0F172A"; targetCtx.lineCap = "round"; targetCtx.lineJoin = "round"; targetCtx.lineWidth = Math.max(2, p2.p * 12); targetCtx.moveTo(p1.x, p1.y); targetCtx.lineTo(p2.x, p2.y); targetCtx.stroke();
+      }
+    };
+    const up = (e) => { isDrawing = false; if(e.type === 'touchend' || e.type === 'touchcancel') e.preventDefault(); };
+
+    targetCanvas.addEventListener('pointerdown', down); targetCanvas.addEventListener('pointermove', move);
+    targetCanvas.addEventListener('pointerup', up); targetCanvas.addEventListener('pointercancel', up);
+    targetCanvas.addEventListener('touchstart', down, {passive: false}); targetCanvas.addEventListener('touchmove', move, {passive: false});
+    targetCanvas.addEventListener('touchend', up, {passive: false}); targetCanvas.addEventListener('touchcancel', up, {passive: false});
+  }
+
+  function undoStroke() { if (currentStrokes.length > 0) { currentStrokes.pop(); redrawMainCanvas(); } }
+  function clearCanvas() { currentStrokes = []; redrawMainCanvas(); }
+  function redrawMainCanvas() { ctx.clearRect(0, 0, LOGICAL_SIZE, LOGICAL_SIZE); drawStrokes(ctx, currentStrokes, 1, "#0F172A"); }
+  function undoPoolStroke() { if (poolStrokes.length > 0) { poolStrokes.pop(); redrawPoolCanvas(); } }
+  function clearPoolCanvas() { poolStrokes = []; redrawPoolCanvas(); }
+  function redrawPoolCanvas() { poolCtx.clearRect(0, 0, LOGICAL_SIZE, LOGICAL_SIZE * 0.75); drawStrokes(poolCtx, poolStrokes, 1, "#0F172A"); }
+
+  function drawStrokes(context, strokes, scale, color) {
+    if (!strokes) return; context.strokeStyle = color; context.lineCap = "round"; context.lineJoin = "round";
+    strokes.forEach(stroke => {
+      if (stroke.length < 2) return;
+      for (let i = 1; i < stroke.length; i++) {
+        context.beginPath(); context.lineWidth = Math.max(1, (stroke[i].p || 0.8) * 12 * scale);
+        context.moveTo(stroke[i-1].x * scale, stroke[i-1].y * scale); context.lineTo(stroke[i].x * scale, stroke[i].y * scale); context.stroke();
+      }
+    });
+  }
+
+  function exportSubmission() {
+    activeSessionData.meta.isRevisionMode = true; saveActiveSession();
+    const payload = { meta: activeSessionData.meta, responses: Object.keys(activeSessionData.responses).map(id => ({ itemId: id, slots: activeSessionData.responses[id].slots })) };
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
+    const dl = document.createElement('a'); dl.href = dataStr; dl.download = `${studentIdentity.id}_submission_${activeWeekId}.json`;
+    document.body.appendChild(dl); dl.click(); dl.remove();
+    alert("Assignment exported!"); showView('dashboardView');
+  }
+
+  // --- KEYBOARD SHORTCUTS (desktop) ---
+  document.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+    const modalOpen = [...document.querySelectorAll('.modal-overlay')].some(m => m.style.display === 'flex');
+    if (modalOpen) return;
+    const practiceActive = document.getElementById('practiceView').classList.contains('active');
+    const poolActive = document.getElementById('poolPracticeView').classList.contains('active');
+    if (practiceActive) {
+      if (e.key === 'Enter') { e.preventDefault(); if (currentAppMode !== 'feedback') handleMainAction(); }
+      else if (e.key === 'z' || e.key === 'Z') { if (currentAppMode !== 'feedback') undoStroke(); }
+      else if (e.key === 'c' || e.key === 'C') { if (currentAppMode !== 'feedback') clearCanvas(); }
+      else if (e.key === 'ArrowLeft') { navigateItem(-1); }
+      else if (e.key === 'ArrowRight') { navigateItem(1); }
+      else if ((e.key === 'r' || e.key === 'R') && document.getElementById('referenceArea').style.display !== 'none') { toggleReference(); }
+    } else if (poolActive) {
+      if (e.key === 'Enter' || e.key === 'ArrowRight') { nextPoolCharacter(); }
+      else if (e.key === 'ArrowLeft') { prevPoolCharacter(); }
+      else if (e.key === ' ') { e.preventDefault(); togglePoolAnswer(); }
+      else if (e.key === 'z' || e.key === 'Z') { undoPoolStroke(); }
+      else if (e.key === 'c' || e.key === 'C') { clearPoolCanvas(); }
+    }
+  });
+</script>
+</body>
+</html>
